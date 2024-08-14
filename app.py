@@ -7,6 +7,7 @@ import os
 app = Flask(__name__)
 
 frontend_origin = os.getenv('FRONTEND_ORIGIN', 'http://localhost:3000')
+port = os.getenv('PORT')
 
 
 CORS(app, resources={r"/*": {"origins": frontend_origin}})
@@ -127,4 +128,4 @@ def clear_orders():
     return jsonify({'status': 'All orders cleared'}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', debug=True)
+    socketio.run(app, host='0.0.0.0',port=port, debug=True)
