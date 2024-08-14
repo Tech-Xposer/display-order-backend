@@ -127,4 +127,4 @@ def clear_orders():
     return jsonify({'status': 'All orders cleared'}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, host='0.0.0.0', debug=True)
