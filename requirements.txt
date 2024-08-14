@@ -3,7 +3,5 @@ Flask
 flask-socketio
 python-socketio
 eventlet
-react
-react-dom
 python-dotenv
 flask_cors
