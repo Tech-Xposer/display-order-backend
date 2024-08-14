@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dispatch - Update Dispatch</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Update Dispatch</h1>
+        <form action="/update_dispatch" method="post" class="mt-4">
+            <div class="form-group">
+                <label for="order_number">Order Number</label>
+                <input type="text" class="form-control" id="order_number" name="order_number" required>
+            </div>
+            <div class="form-group">
+                <label for="dispatched">Dispatched</label>
+                <select class="form-control" id="dispatched" name="dispatched" required>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Dispatch</button>
+        </form>
+        {% if message %}
+            <div class="alert alert-success mt-3">{{ message }}</div>
+        {% endif %}
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

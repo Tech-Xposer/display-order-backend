@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing - Add Order</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Add Order</h1>
+        <form action="/add_order" method="post" class="mt-4">
+            <div class="form-group">
+                <label for="order_number">Order Number</label>
+                <input type="text" class="form-control" id="order_number" name="order_number" required>
+            </div>
+            <div class="form-group">
+                <label for="party_name">Party Name</label>
+                <input type="text" class="form-control" id="party_name" name="party_name" required>
+            </div>
+            <div class="form-group">
+                <label for="station_name">Station Name</label>
+                <input type="text" class="form-control" id="station_name" name="station_name" required>
+            </div>
+            <div class="form-group">
+                <label for="division">Division</label>
+                <input type="text" class="form-control" id="division" name="division" required>
+            </div>
+            <div class="form-group">
+                <label for="transport">Transport</label>
+                <input type="text" class="form-control" id="transport" name="transport" required>
+            </div>
+            <div class="form-group">
+                <label for="promotional_material">Promotional Material</label>
+                <input type="text" class="form-control" id="promotional_material" name="promotional_material" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Order</button>
+        </form>
+        {% if message %}
+            <div class="alert alert-success mt-3">{{ message }}</div>
+        {% endif %}
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
