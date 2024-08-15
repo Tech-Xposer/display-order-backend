@@ -126,6 +126,3 @@ def clear_orders():
         file_path = os.path.join(ORDER_FILES_DIR, filename)
         os.remove(file_path)
     return jsonify({'status': 'All orders cleared'}), 200
-
-if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0',port=port, debug=True)
