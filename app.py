@@ -2,8 +2,8 @@ from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from datetime import datetime
-import os
 from pymongo import MongoClient
+import os
 
 app = Flask(__name__)
 
@@ -14,9 +14,8 @@ CORS(app, resources={r"/*": {"origins": frontend_origin}})
 socketio = SocketIO(app, cors_allowed_origins=frontend_origin)
 
 # MongoDB setup
-MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
-client = MongoClient(MONGO_URI)
-db = client['order_db']
+client = MongoClient(os.getenv('MONGODB_URI', 'mongodb://localhost:27017/'))
+db = client['order_management']
 orders_collection = db['orders']
 
 @app.route('/')
@@ -37,7 +36,7 @@ def add_order():
             'date_and_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'status': 'marketing'  # Mark as marketing
         }
-        orders_collection.insert_one(order)  # Save order to MongoDB
+        orders_collection.insert_one(order)
         socketio.emit('update', order)
         return render_template('marketing.html', message="Order added successfully!")
     return render_template('marketing.html')
@@ -53,12 +52,16 @@ def update_packaging():
 
         order = orders_collection.find_one({'order_number': order_number})
         if order:
-            order['total_shipper'] = total_shipper
-            order['packed'] = packed
-            if packed_time:
-                order['packed_time'] = packed_time
-            order['status'] = 'packaging'  # Update status to packaging
-            orders_collection.update_one({'_id': order['_id']}, {"$set": order})  # Save updated order to MongoDB
+            orders_collection.update_one(
+                {'order_number': order_number},
+                {'$set': {
+                    'total_shipper': total_shipper,
+                    'packed': packed,
+                    'packed_time': packed_time,
+                    'status': 'packaging'  # Update status to packaging
+                }}
+            )
+            order = orders_collection.find_one({'order_number': order_number})
             socketio.emit('update', order)
             return render_template('packaging.html', message="Packaging details updated successfully!")
         return jsonify({'status': 'Order not found'}), 404
@@ -74,11 +77,15 @@ def update_billing():
 
         order = orders_collection.find_one({'order_number': order_number})
         if order:
-            order['billed'] = billed
-            if billed_time:
-                order['billed_time'] = billed_time
-            order['status'] = 'billing'  # Update status to billing
-            orders_collection.update_one({'_id': order['_id']}, {"$set": order})  # Save updated order to MongoDB
+            orders_collection.update_one(
+                {'order_number': order_number},
+                {'$set': {
+                    'billed': billed,
+                    'billed_time': billed_time,
+                    'status': 'billing'  # Update status to billing
+                }}
+            )
+            order = orders_collection.find_one({'order_number': order_number})
             socketio.emit('update', order)
             return render_template('billing.html', message="Billing details updated successfully!")
         return jsonify({'status': 'Order not found'}), 404
@@ -94,11 +101,15 @@ def update_dispatch():
 
         order = orders_collection.find_one({'order_number': order_number})
         if order:
-            order['dispatched'] = dispatched
-            if dispatched_time:
-                order['dispatched_time'] = dispatched_time
-            order['status'] = 'dispatch'  # Update status to dispatch
-            orders_collection.update_one({'_id': order['_id']}, {"$set": order})  # Save updated order to MongoDB
+            orders_collection.update_one(
+                {'order_number': order_number},
+                {'$set': {
+                    'dispatched': dispatched,
+                    'dispatched_time': dispatched_time,
+                    'status': 'dispatch'  # Update status to dispatch
+                }}
+            )
+            order = orders_collection.find_one({'order_number': order_number})
             socketio.emit('update', order)
             return render_template('dispatch.html', message="Dispatch details updated successfully!")
         return jsonify({'status': 'Order not found'}), 404
@@ -106,10 +117,8 @@ def update_dispatch():
 
 @app.route('/orders', methods=['GET'])
 def get_orders():
-    orders = list(orders_collection.find({}))
-    for order in orders:
-        order['_id'] = str(order['_id'])  # Convert ObjectId to string for JSON serialization
-    return jsonify(orders)
+    all_orders = list(orders_collection.find())
+    return jsonify(all_orders)
 
 @app.route('/clear_orders', methods=['POST'])
 def clear_orders():
