@@ -118,7 +118,9 @@ def update_dispatch():
 @app.route('/orders', methods=['GET'])
 def get_orders():
     all_orders = list(orders_collection.find())
-    return jsonify(all_orders)
+    for order in all_orders:
+        order['_id'] = str(order['_id'])  # Convert ObjectId to string for JSON serialization
+    return jsonify( all_orders)
 
 @app.route('/clear_orders', methods=['POST'])
 def clear_orders():
