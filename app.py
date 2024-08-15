@@ -50,8 +50,9 @@ def add_order():
             'date_and_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'status': 'marketing'  # Mark as marketing
         }
-        orders_collection.insert_one(order)
-        socketio.emit('update', order)
+        orders_collection.insert_one(order) 
+        print(order)
+        socketio.emit('update', 'order')
         return render_template('marketing.html', message="Order added successfully!")
     return render_template('marketing.html')
 
@@ -142,4 +143,4 @@ def clear_orders():
     return jsonify({'status': 'All orders cleared'}), 200
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
