@@ -8,13 +8,16 @@ import os
 app = Flask(__name__)
 
 frontend_origin = os.getenv('FRONTEND_ORIGIN', 'http://localhost:3000')
-port = os.getenv('PORT')
+port = os.getenv('PORT', 5000)
+print(port)
 
 CORS(app, resources={r"/*": {"origins": frontend_origin}})
-socketio = SocketIO(app, cors_allowed_origins=frontend_origin)
+socketio = SocketIO(app, cors_allowed_origins='*')
+
 
 # MongoDB setup
 client = MongoClient(os.getenv('MONGODB_URI', 'mongodb://localhost:27017/'))
+print(client)
 db = client['order_management']
 orders_collection = db['orders']
 
