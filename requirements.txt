@@ -6,3 +6,4 @@ eventlet
 python-dotenv
 flask_cors
 Werkzeug
+pymongo

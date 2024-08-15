@@ -3,22 +3,21 @@ from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from datetime import datetime
 import os
+from pymongo import MongoClient
 
 app = Flask(__name__)
 
 frontend_origin = os.getenv('FRONTEND_ORIGIN', 'http://localhost:3000')
 port = os.getenv('PORT')
 
-
 CORS(app, resources={r"/*": {"origins": frontend_origin}})
 socketio = SocketIO(app, cors_allowed_origins=frontend_origin)
 
-# Directory for storing order details
-ORDER_FILES_DIR = 'backend/files'
-if not os.path.exists(ORDER_FILES_DIR):
-    os.makedirs(ORDER_FILES_DIR)
-
-orders = []
+# MongoDB setup
+MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
+client = MongoClient(MONGO_URI)
+db = client['order_db']
+orders_collection = db['orders']
 
 @app.route('/')
 def index():
@@ -38,8 +37,7 @@ def add_order():
             'date_and_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'status': 'marketing'  # Mark as marketing
         }
-        orders.append(order)
-        save_order_to_file(order)  # Save order details to file
+        orders_collection.insert_one(order)  # Save order to MongoDB
         socketio.emit('update', order)
         return render_template('marketing.html', message="Order added successfully!")
     return render_template('marketing.html')
@@ -53,16 +51,16 @@ def update_packaging():
         packed = data.get('packed')
         packed_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if packed == 'yes' else None
 
-        for order in orders:
-            if order['order_number'] == order_number:
-                order['total_shipper'] = total_shipper
-                order['packed'] = packed
-                if packed_time:
-                    order['packed_time'] = packed_time
-                order['status'] = 'packaging'  # Update status to packaging
-                save_order_to_file(order)  # Save updated order details to file
-                socketio.emit('update', order)
-                return render_template('packaging.html', message="Packaging details updated successfully!")
+        order = orders_collection.find_one({'order_number': order_number})
+        if order:
+            order['total_shipper'] = total_shipper
+            order['packed'] = packed
+            if packed_time:
+                order['packed_time'] = packed_time
+            order['status'] = 'packaging'  # Update status to packaging
+            orders_collection.update_one({'_id': order['_id']}, {"$set": order})  # Save updated order to MongoDB
+            socketio.emit('update', order)
+            return render_template('packaging.html', message="Packaging details updated successfully!")
         return jsonify({'status': 'Order not found'}), 404
     return render_template('packaging.html')
 
@@ -74,15 +72,15 @@ def update_billing():
         billed = data.get('billed')
         billed_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if billed == 'yes' else None
 
-        for order in orders:
-            if order['order_number'] == order_number:
-                order['billed'] = billed
-                if billed_time:
-                    order['billed_time'] = billed_time
-                order['status'] = 'billing'  # Update status to billing
-                save_order_to_file(order)  # Save updated order details to file
-                socketio.emit('update', order)
-                return render_template('billing.html', message="Billing details updated successfully!")
+        order = orders_collection.find_one({'order_number': order_number})
+        if order:
+            order['billed'] = billed
+            if billed_time:
+                order['billed_time'] = billed_time
+            order['status'] = 'billing'  # Update status to billing
+            orders_collection.update_one({'_id': order['_id']}, {"$set": order})  # Save updated order to MongoDB
+            socketio.emit('update', order)
+            return render_template('billing.html', message="Billing details updated successfully!")
         return jsonify({'status': 'Order not found'}), 404
     return render_template('billing.html')
 
@@ -94,35 +92,26 @@ def update_dispatch():
         dispatched = data.get('dispatched')
         dispatched_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if dispatched == 'yes' else None
 
-        for order in orders:
-            if order['order_number'] == order_number:
-                order['dispatched'] = dispatched
-                if dispatched_time:
-                    order['dispatched_time'] = dispatched_time
-                order['status'] = 'dispatch'  # Update status to dispatch
-                save_order_to_file(order)  # Save updated order details to file
-                socketio.emit('update', order)
-                return render_template('dispatch.html', message="Dispatch details updated successfully!")
+        order = orders_collection.find_one({'order_number': order_number})
+        if order:
+            order['dispatched'] = dispatched
+            if dispatched_time:
+                order['dispatched_time'] = dispatched_time
+            order['status'] = 'dispatch'  # Update status to dispatch
+            orders_collection.update_one({'_id': order['_id']}, {"$set": order})  # Save updated order to MongoDB
+            socketio.emit('update', order)
+            return render_template('dispatch.html', message="Dispatch details updated successfully!")
         return jsonify({'status': 'Order not found'}), 404
     return render_template('dispatch.html')
 
 @app.route('/orders', methods=['GET'])
 def get_orders():
+    orders = list(orders_collection.find({}))
+    for order in orders:
+        order['_id'] = str(order['_id'])  # Convert ObjectId to string for JSON serialization
     return jsonify(orders)
-
-def save_order_to_file(order):
-    filename = os.path.join(ORDER_FILES_DIR, f"{order['order_number']}.txt")
-    with open(filename, 'w') as f:
-        for key, value in order.items():
-            f.write(f"{key}: {value}\n")
-        f.write("\n")  # Add an extra newline for separation
 
 @app.route('/clear_orders', methods=['POST'])
 def clear_orders():
-    global orders
-    orders = []  # Clear the orders list
-    # Optionally, clear the files as well
-    for filename in os.listdir(ORDER_FILES_DIR):
-        file_path = os.path.join(ORDER_FILES_DIR, filename)
-        os.remove(file_path)
+    orders_collection.delete_many({})  # Clear all orders from MongoDB
     return jsonify({'status': 'All orders cleared'}), 200
