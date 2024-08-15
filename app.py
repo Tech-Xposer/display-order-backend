@@ -7,17 +7,28 @@ import os
 
 app = Flask(__name__)
 
-frontend_origin = os.getenv('FRONTEND_ORIGIN', 'http://localhost:3000')
-port = os.getenv('PORT', 5000)
-print(port)
+FRONT_END_ORIGIN = os.getenv('FRONTEND_ORIGIN', 'http://localhost:3000')
+MONGODB_URI=os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')
 
-CORS(app, resources={r"/*": {"origins": frontend_origin}})
-socketio = SocketIO(app, cors_allowed_origins='*')
+CORS(app, resources={r"/*": {"origins": FRONT_END_ORIGIN}})
 
+socketio = SocketIO(app, cors_allowed_origins=FRONT_END_ORIGIN)
 
 # MongoDB setup
-client = MongoClient(os.getenv('MONGODB_URI', 'mongodb://localhost:27017/'))
-print(client)
+client = MongoClient(MONGODB_URI)
+
+#logging 
+print('frontend url:' , FRONT_END_ORIGIN)
+print('mongodb url:' , MONGODB_URI)
+
+@socketio.on('connect')
+def on_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def on_disconnect():
+    print('Client disconnected')
+
 db = client['order_management']
 orders_collection = db['orders']
 
@@ -129,3 +140,6 @@ def get_orders():
 def clear_orders():
     orders_collection.delete_many({})  # Clear all orders from MongoDB
     return jsonify({'status': 'All orders cleared'}), 200
+
+if __name__ == '__main__':
+    socketio.run(app, debug=True)
