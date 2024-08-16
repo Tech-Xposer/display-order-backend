@@ -48,8 +48,11 @@ timezone = pytz.timezone("Asia/Kolkata")
 current_time = datetime.now(timezone)
 
 @app.route('/time')
+def get_current_time_and_date():
+    return get_current_time().strftime('%Y-%m-%d %H:%M:%S %Z%z')
 def get_current_time():
-    return {'time': current_time.strftime("%Y-%m-%d %H:%M:%S")}
+    timezone = pytz.timezone("Asia/Kolkata")
+    return datetime.now(timezone)
 
 @app.route('/add_order', methods=['GET', 'POST'])
 def add_order():
@@ -57,16 +60,15 @@ def add_order():
         if request.method == 'POST':
             data = request.form
             count = orders_collection.count_documents({})
-            print('total count:', count)
             order = {
-                'order_number': count+1,
+                'order_number': count + 1,
                 'party_name': data.get('party_name'),
                 'station_name': data.get('station_name'),
                 'division': data.get('division'),
                 'order_by': data.get('order_by'),
                 'transport': data.get('transport'),
                 'promotional_material': data.get('promotional_material'),
-                'date_and_time': current_time.strftime('%Y-%m-%d %H:%M:%S %Z%z'),
+                'date_and_time': get_current_time().strftime('%Y-%m-%d %H:%M:%S %Z%z'),
                 'status': 'marketing'
             }
             result = orders_collection.insert_one(order)
@@ -87,7 +89,7 @@ def update_packaging():
             order_number = int(order_number)
             total_shipper = data.get('total_shipper')
             packed = data.get('packed')
-            packed_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z%z') if packed == 'yes' else None
+            packed_time = get_current_time().strftime('%Y-%m-%d %H:%M:%S %Z%z') if packed == 'yes' else None
 
             order = orders_collection.find_one({'order_number': order_number})
             print(order)
@@ -119,7 +121,7 @@ def update_billing():
             order_number = data.get('order_number')
             order_number = int(order_number)
             billed = data.get('billed')
-            billed_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z%z') if billed == 'yes' else None
+            billed_time = get_current_time().strftime('%Y-%m-%d %H:%M:%S %Z%z') if billed == 'yes' else None
 
             order = orders_collection.find_one({'order_number': order_number})
             if order:
@@ -149,7 +151,7 @@ def update_dispatch():
             order_number = data.get('order_number')
             order_number = int(order_number)
             dispatched = data.get('dispatched')
-            dispatched_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z%z') if dispatched == 'yes' else None
+            dispatched_time = get_current_time().strftime('%Y-%m-%d %H:%M:%S %Z%z') if dispatched == 'yes' else None
 
             order = orders_collection.find_one({'order_number': order_number})
             if order:
