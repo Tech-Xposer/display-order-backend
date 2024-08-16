@@ -47,6 +47,7 @@ def add_order():
                 'party_name': data.get('party_name'),
                 'station_name': data.get('station_name'),
                 'division': data.get('division'),
+                'order_by': data.get('order_by'),
                 'transport': data.get('transport'),
                 'promotional_material': data.get('promotional_material'),
                 'date_and_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
