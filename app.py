@@ -49,8 +49,10 @@ def add_order():
     try:
         if request.method == 'POST':
             data = request.form
+            count = orders_collection.count_documents({})
+            print('total count:', count)
             order = {
-                'order_number': data.get('order_number'),
+                'order_number': count+1,
                 'party_name': data.get('party_name'),
                 'station_name': data.get('station_name'),
                 'division': data.get('division'),
@@ -58,7 +60,6 @@ def add_order():
                 'transport': data.get('transport'),
                 'promotional_material': data.get('promotional_material'),
                 'date_and_time': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
-
                 'status': 'marketing'
             }
             result = orders_collection.insert_one(order)
@@ -76,11 +77,13 @@ def update_packaging():
         if request.method == 'POST':
             data = request.form
             order_number = data.get('order_number')
+            order_number = int(order_number)
             total_shipper = data.get('total_shipper')
             packed = data.get('packed')
             packed_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S') if packed == 'yes' else None
 
             order = orders_collection.find_one({'order_number': order_number})
+            print(order)
             if order:
                 orders_collection.update_one(
                     {'order_number': order_number},
@@ -107,6 +110,7 @@ def update_billing():
         if request.method == 'POST':
             data = request.form
             order_number = data.get('order_number')
+            order_number = int(order_number)
             billed = data.get('billed')
             billed_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S') if billed == 'yes' else None
 
@@ -136,6 +140,7 @@ def update_dispatch():
         if request.method == 'POST':
             data = request.form
             order_number = data.get('order_number')
+            order_number = int(order_number)
             dispatched = data.get('dispatched')
             dispatched_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S') if dispatched == 'yes' else None
 
