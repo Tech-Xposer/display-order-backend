@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from bson import ObjectId
 import os
 from datetime import datetime, timezone, timedelta
-
+import pytz
 
 load_dotenv()
 app = Flask(__name__)
@@ -44,6 +44,13 @@ def on_disconnect():
 def index():
     return render_template('marketing.html')
 
+timezone = pytz.timezone("Asia/Kolkata")
+current_time = datetime.now(timezone)
+
+@app.route('/time')
+def get_current_time():
+    return {'time': current_time.strftime("%Y-%m-%d %H:%M:%S")}
+
 @app.route('/add_order', methods=['GET', 'POST'])
 def add_order():
     try:
@@ -59,7 +66,7 @@ def add_order():
                 'order_by': data.get('order_by'),
                 'transport': data.get('transport'),
                 'promotional_material': data.get('promotional_material'),
-                'date_and_time': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+                'date_and_time': current_time.strftime('%Y-%m-%d %H:%M:%S %Z%z'),
                 'status': 'marketing'
             }
             result = orders_collection.insert_one(order)
@@ -80,7 +87,7 @@ def update_packaging():
             order_number = int(order_number)
             total_shipper = data.get('total_shipper')
             packed = data.get('packed')
-            packed_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S') if packed == 'yes' else None
+            packed_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z%z') if packed == 'yes' else None
 
             order = orders_collection.find_one({'order_number': order_number})
             print(order)
@@ -112,7 +119,7 @@ def update_billing():
             order_number = data.get('order_number')
             order_number = int(order_number)
             billed = data.get('billed')
-            billed_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S') if billed == 'yes' else None
+            billed_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z%z') if billed == 'yes' else None
 
             order = orders_collection.find_one({'order_number': order_number})
             if order:
@@ -142,7 +149,7 @@ def update_dispatch():
             order_number = data.get('order_number')
             order_number = int(order_number)
             dispatched = data.get('dispatched')
-            dispatched_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S') if dispatched == 'yes' else None
+            dispatched_time = current_time.strftime('%Y-%m-%d %H:%M:%S %Z%z') if dispatched == 'yes' else None
 
             order = orders_collection.find_one({'order_number': order_number})
             if order:
