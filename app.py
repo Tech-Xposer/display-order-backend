@@ -6,6 +6,8 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 from bson import ObjectId
 import os
+from datetime import datetime, timezone, timedelta
+
 
 load_dotenv()
 app = Flask(__name__)
@@ -20,6 +22,11 @@ socketio = SocketIO(app, cors_allowed_origins=FRONT_END_ORIGIN)
 client = MongoClient(MONGODB_URI)
 db = client['order_management']
 orders_collection = db['orders']
+
+def convert_to_ist(utc_time_str):
+    utc_time = datetime.strptime(utc_time_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
+    ist_time = utc_time.astimezone(timezone(timedelta(hours=5, minutes=30)))  # IST is UTC+5:30
+    return ist_time.strftime('%Y-%m-%d %H:%M:%S')
 
 # Logging
 print('frontend url:', FRONT_END_ORIGIN)
@@ -50,7 +57,8 @@ def add_order():
                 'order_by': data.get('order_by'),
                 'transport': data.get('transport'),
                 'promotional_material': data.get('promotional_material'),
-                'date_and_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'date_and_time': datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'),
+
                 'status': 'marketing'
             }
             result = orders_collection.insert_one(order)
@@ -70,7 +78,7 @@ def update_packaging():
             order_number = data.get('order_number')
             total_shipper = data.get('total_shipper')
             packed = data.get('packed')
-            packed_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if packed == 'yes' else None
+            packed_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S') if packed == 'yes' else None
 
             order = orders_collection.find_one({'order_number': order_number})
             if order:
@@ -100,7 +108,7 @@ def update_billing():
             data = request.form
             order_number = data.get('order_number')
             billed = data.get('billed')
-            billed_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if billed == 'yes' else None
+            billed_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S') if billed == 'yes' else None
 
             order = orders_collection.find_one({'order_number': order_number})
             if order:
@@ -129,7 +137,7 @@ def update_dispatch():
             data = request.form
             order_number = data.get('order_number')
             dispatched = data.get('dispatched')
-            dispatched_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if dispatched == 'yes' else None
+            dispatched_time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S') if dispatched == 'yes' else None
 
             order = orders_collection.find_one({'order_number': order_number})
             if order:
