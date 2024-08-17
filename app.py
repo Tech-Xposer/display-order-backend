@@ -22,6 +22,7 @@ socketio = SocketIO(app, cors_allowed_origins=FRONT_END_ORIGIN)
 client = MongoClient(MONGODB_URI)
 db = client['order_management']
 orders_collection = db['orders']
+trash_collection = db['trash']
 
 def convert_to_ist(utc_time_str):
     utc_time = datetime.strptime(utc_time_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
@@ -184,14 +185,57 @@ def get_orders():
         print(f"Error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+@app.route('/deleted_orders', methods=['GET'])
+def get_trash_items():
+    try:
+        all_trashed_orders = list(trash_collection.find())
+        for order in all_trashed_orders:
+            order['_id'] = str(order['_id'])  # Convert ObjectId to string
+        return jsonify(all_trashed_orders)
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
 @app.route('/clear_orders', methods=['POST'])
 def clear_orders():
     try:
+        orders = orders_collection.find()
+        trash_collection.insert_many(orders)
         orders_collection.delete_many({})  # Clear all orders from MongoDB
         return jsonify({'status': 'All orders cleared'}), 200
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+#restore orders from trash
+@app.route('/restore_orders', methods=['POST'])
+def restore_orders():
+    try:
+        orders = list(trash_collection.find())
+        if not orders:
+            return jsonify({'status': 'error', 'message': 'No orders to restore'}), 404
+
+        orders_collection.insert_many(orders)
+        trash_collection.delete_many({})  # Clear all orders from MongoDB
+
+        # Convert ObjectId to string for JSON serialization
+        for order in orders:
+            order['_id'] = str(order['_id'])
+
+        # Emit the restored orders via Socket.IO
+        socketio.emit('update', orders)
+        
+        return jsonify({'status': 'All orders restored', 'restored_orders': len(orders)}), 200
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('notfound.html'), 404
+
+
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=int(os.getenv('PORT', 5001)), debug=True)
