@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect, url_for
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from datetime import datetime
@@ -75,7 +75,8 @@ def add_order():
             result = orders_collection.insert_one(order)
             order['_id'] = str(result.inserted_id)  # Convert ObjectId to string
             socketio.emit('update', order)
-            return render_template('marketing.html', message="Order added successfully!")
+            return redirect(url_for('index', message='Order added successfully!'))
+
         return render_template('marketing.html')
     except Exception as e:
         print(f"Error: {e}")
