@@ -35,7 +35,7 @@
                 <label for="promotional_material">Promotional Material</label>
                 <input type="text" class="form-control" id="promotional_material" name="promotional_material" required>
             </div>
-            <button type="submit" class="btn btn-primary">Add Order</button>
+            <button type="submit" class="btn btn-primary" id="submitButton">Add Order</button>
         </form>
         {% if request.args.get('message') %}
             <div class="alert alert-success mt-3">{{ request.args.get('message') }}</div>
@@ -47,8 +47,14 @@
     <!-- Custom JavaScript -->
     <script>
         function confirmSubmission() {
-            return confirm("Are you sure you want to add this order?");
+            const isConfirmed = confirm("Are you sure you want to add this order?");
+            if (isConfirmed) {
+                document.getElementById("submitButton").disabled = true;
+                return true;
+            }
+            return false;
         }
+
     </script>
 </body>
 </html>
