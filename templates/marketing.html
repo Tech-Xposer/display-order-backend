@@ -10,7 +10,7 @@
 <body>
     <div class="container mt-5">
         <h1 class="text-center">Add Order</h1>
-        <form action="/add_order" method="post" class="mt-4">
+        <form action="/add_order" method="post" class="mt-4" onsubmit="return confirmSubmission()">
             <!-- <div class="form-group">
                 <label for="order_number">Order No.</label>
                 <input type="text" class="form-control" id="order_number" name="order_number" required>
@@ -47,5 +47,12 @@
     </div>
     <!-- Bootstrap JS -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        function confirmSubmission() {
+            return confirm("Are you sure you want to add this order?");
+        }
+    </script>
 </body>
 </html>
