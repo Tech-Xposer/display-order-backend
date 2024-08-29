@@ -24,7 +24,22 @@ db = client['order_management']
 orders_collection = db['orders']
 trash_collection = db['trash']
 completed_collection = db['completed_orders']
+serial_number_collection = db['serial_counter']
 
+def initialize_serial_number():
+    if serial_number_collection.count_documents({}) == 0:
+        serial_number_collection.insert_one({'current_serial_number': 0})
+
+
+initialize_serial_number()
+
+def generate_serial_number():
+    result = serial_number_collection.find_one_and_update(
+        {},
+        {'$inc': {'current_serial_number': 1}},
+        return_document=True
+    )
+    return result['current_serial_number']
 
 def convert_to_ist(utc_time_str):
     utc_time = datetime.strptime(utc_time_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
@@ -62,9 +77,9 @@ def add_order():
     try:
         if request.method == 'POST':
             data = request.form
-            count = orders_collection.count_documents({})
+            serial_number = generate_serial_number()  # Generate a new serial number
             order = {
-                'order_number': count + 1,
+                'order_number': serial_number,
                 'party_name': data.get('party_name'),
                 'station_name': data.get('station_name'),
                 'division': data.get('division'),
