@@ -23,6 +23,8 @@ client = MongoClient(MONGODB_URI)
 db = client['order_management']
 orders_collection = db['orders']
 trash_collection = db['trash']
+completed_collection = db['completed_orders']
+
 
 def convert_to_ist(utc_time_str):
     utc_time = datetime.strptime(utc_time_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc)
@@ -150,25 +152,31 @@ def update_dispatch():
     try:
         if request.method == 'POST':
             data = request.form
-            order_number = data.get('order_number')
-            order_number = int(order_number)
+            order_number = int(data.get('order_number'))
             dispatched = data.get('dispatched')
+
+            print(dispatched)
+
             dispatched_time = get_current_time().strftime('%Y-%m-%d %H:%M:%S %Z%z') if dispatched == 'yes' else None
 
+            status = 'dispatch' if dispatched == 'yes' else 'on-hold'
+            
             order = orders_collection.find_one({'order_number': order_number})
+            print(order)
             if order:
                 orders_collection.update_one(
                     {'order_number': order_number},
                     {'$set': {
                         'dispatched': dispatched,
                         'dispatched_time': dispatched_time,
-                        'status': 'dispatch'
+                        'status': status
                     }}
                 )
                 updated_order = orders_collection.find_one({'order_number': order_number})
                 updated_order['_id'] = str(updated_order['_id'])  # Convert ObjectId to string
                 socketio.emit('update', updated_order)
                 return render_template('dispatch.html', message="Dispatch details updated successfully!")
+            
             return jsonify({'status': 'Order not found'}), 404
         return render_template('dispatch.html')
     except Exception as e:
@@ -201,9 +209,11 @@ def get_trash_items():
 @app.route('/clear_orders', methods=['POST'])
 def clear_orders():
     try:
-        orders = orders_collection.find()
-        trash_collection.insert_many(orders)
-        orders_collection.delete_many({})  # Clear all orders from MongoDB
+        orders = orders_collection.find(
+            {'status':"dispatch"}
+        )
+        completed_collection.insert_many(orders)
+        orders_collection.delete_many({'status':"dispatch"})  # Clear all orders from MongoDB
         return jsonify({'status': 'All orders cleared'}), 200
     except Exception as e:
         print(f"Error: {e}")
@@ -232,6 +242,19 @@ def restore_orders():
         logging.error(f"Error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+
+#completed orders route
+@app.route('/completed_orders', methods=['GET'])
+def get_completed_orders():
+    try:
+        all_completed_orders = list(completed_collection.find())
+        for order in all_completed_orders:
+            order['_id'] = str(order['_id'])  # Convert ObjectId to string
+        return jsonify(all_completed_orders)
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    
 @app.errorhandler(404)
 def not_found(e):
     return render_template('notfound.html'), 404
